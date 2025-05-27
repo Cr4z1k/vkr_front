@@ -84,3 +84,23 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+.error-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; /* Adds spacing between error blocks */
+  max-height: 300px; /* Limits the height of the error stack */
+  overflow-y: auto; /* Enables vertical scrolling if content overflows */
+  padding: 10px; /* Adds padding around the error stack */
+  border: 1px solid var(--color-border);
+  border-radius: 8px; /* Rounded corners for a polished appearance */
+  background-color: var(--color-background-soft);
+}
+
+.error-block {
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px; /* Ensures consistent rounded corners */
+  background-color: var(--color-background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Adds a subtle shadow for better visibility */
+}
