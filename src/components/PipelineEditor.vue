@@ -3,8 +3,8 @@
     <div class="toolbar">
       <button @click="addNode">📦 Добавить обработчик</button>
       <button @click="sendToServer"
-        :disabled="isCyclic || hasInvalidYaml || hasJoinNodeErrors || isSending || hasJoinAsOutput"
-        :class="{ disabled: isCyclic || hasInvalidYaml || hasJoinNodeErrors || isSending || hasJoinAsOutput }">
+        :disabled="isCyclic || hasInvalidYaml || hasJoinNodeErrors || hasProcessorNodeErrors || isSending || hasJoinAsOutput"
+        :class="{ disabled: isCyclic || hasInvalidYaml || hasJoinNodeErrors || hasProcessorNodeErrors || isSending || hasJoinAsOutput }">
         <span v-if="isSending" class="spinner"></span>
         <span v-else>🚀 Запустить пайплайны</span>
       </button>
@@ -38,6 +38,10 @@
       <div v-if="joinOutputError" class="cyclic-warning error-block">
         У одной или нескольких join-нод нет исходящих рёбер.
       </div>
+      <!-- Вывод ошибок processor-ноды -->
+      <div v-for="(errs, id) in processorNodeErrors" :key="id" class="cyclic-warning invalid-yaml-warning error-block">
+        <div v-for="(msg, field) in errs" :key="field">{{ msg }}</div>
+      </div>
     </div>
     <VueFlow
       v-model:nodes="nodes"
@@ -59,7 +63,11 @@
       <template #node-processor="{ id, data }">
         <div class="processor-node"
           @dblclick="openEditor(id)"
-          :class="{ 'invalid-yaml': invalidYamlNodes.includes(id), 'server-error': serverErrorNodes.includes(id), 'join-error': joinErrorNodes.includes(id) }">
+          :class="{
+  'invalid-yaml': invalidYamlNodes.includes(id),
+  'server-error': serverErrorNodes.includes(id),
+  'error-node': errorNodes.includes(id)
+}">
           <Handle type="target" :position="Position.Left" :id="'in'" />
           <div class="node-header">{{ id }}</div>
           <div class="node-config-preview">
@@ -489,18 +497,15 @@ watch(
   { immediate: true }
 );
 
-// 1. Добавляем computed для ошибок join-ноды
+// 1. Проверка ошибок только для join-ноды
 const joinNodeErrors = computed(() => {
   const errors = {};
   for (const n of nodes.value) {
     if (isJoinNode(n.id)) {
-      // Удалить проверку config для join-ноды (join-нода не может иметь config)
-      // defaultTTL error
       if (n.data.defaultTTL && !/^\d+[smhd]$/.test(n.data.defaultTTL.trim())) {
         errors[n.id] = errors[n.id] || {};
         errors[n.id].defaultTTL = 'defaultTTL должен быть строкой формата времени, например "5m", "10s", "2h"';
       }
-      // cacheKey error
       if (!n.data.cacheKey || !n.data.cacheKey.trim()) {
         errors[n.id] = errors[n.id] || {};
         errors[n.id].cacheKey = 'cacheKey обязателен';
@@ -511,8 +516,31 @@ const joinNodeErrors = computed(() => {
 });
 const hasJoinNodeErrors = computed(() => Object.keys(joinNodeErrors.value).length > 0);
 
-// 2. Подсветка join-ноды с ошибкой
-const joinErrorNodes = computed(() => Object.keys(joinNodeErrors.value));
+// 2. Проверка обязательности input/output для processor-ноды (НЕ для join)
+const processorNodeErrors = computed(() => {
+  const errors = {};
+  for (const n of nodes.value) {
+    if (!isJoinNode(n.id)) {
+      if (isInputNode(n.id) && (!n.data.input || !n.data.input.trim())) {
+        errors[n.id] = errors[n.id] || {};
+        errors[n.id].input = 'Input обязателен для ноды без входящих связей';
+      }
+      if (isOutputNode(n.id) && (!n.data.output || !n.data.output.trim())) {
+        errors[n.id] = errors[n.id] || {};
+        errors[n.id].output = 'Output обязателен для ноды без исходящих связей';
+      }
+    }
+  }
+  return errors;
+});
+const hasProcessorNodeErrors = computed(() => Object.keys(processorNodeErrors.value).length > 0);
+
+// 3. Для подсветки ошибок: объединяем joinErrorNodes и processorErrorNodes
+const processorErrorNodes = computed(() => Object.keys(processorNodeErrors.value));
+const errorNodes = computed(() => {
+  // Объединяем все id с ошибками (join + processor)
+  return Array.from(new Set([...Object.keys(joinNodeErrors.value), ...Object.keys(processorNodeErrors.value)]));
+});
 
 watch(
   () => [nodes.value, edges.value],

@@ -59,6 +59,11 @@
   border-color: #ef4444;
   box-shadow: 0 0 0 2px #ef4444bb, 0 4px 16px #ef444433;
 }
+.error-node {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px #ef4444bb, 0 4px 16px #ef444433 !important;
+  animation: shake 0.2s 2;
+}
 @keyframes shake {
   0% { transform: translateX(0); }
   25% { transform: translateX(-3px); }
@@ -153,6 +158,17 @@
   flex-direction: column;
   gap: 12px;
 }
+.modal-editor label,
+.modal-editor input,
+.modal-editor textarea,
+.config-dropdown,
+.config-dropdown button,
+.config-dropdown-wrapper > button {
+  color: #222 !important;
+}
+.modal-editor h3 {
+  color: #222 !important;
+}
 .modal-editor textarea {
   width: 100%;
   min-height: 48px;
@@ -162,11 +178,9 @@
   font-size: 1rem;
   background: #f8fafc;
   transition: border 0.2s;
-}
-.modal-editor textarea:focus {
-  border: 1.5px solid #3b82f6;
-  outline: none;
-  background: #fff;
+  resize: both; /* Позволяет изменять высоту и ширину */
+  max-height: 60vh;
+  max-width: 100%;
 }
 .modal-editor input {
   width: 100%;
