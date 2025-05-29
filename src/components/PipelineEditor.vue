@@ -59,6 +59,7 @@
       @connect="onConnect"
       @edge-update="onEdgeUpdate"
       @edge-delete="onEdgeDelete"
+      ref="vueFlowRef"
     >
       <template #node-processor="{ id, data }">
         <div class="processor-node"
@@ -120,7 +121,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { VueFlow, Handle, Position } from '@vue-flow/core';
+import { VueFlow, Handle, Position, useVueFlow } from '@vue-flow/core';
 import { MiniMap } from '@vue-flow/minimap';
 import { Controls } from '@vue-flow/controls';
 import axios from 'axios';
@@ -143,6 +144,10 @@ const sendMessage = ref('');
 const serverErrorNodes = ref([]);
 const isSending = ref(false);
 const showConfigMenu = ref(false);
+
+// Получаем API Vue Flow
+const vueFlowRef = ref(null);
+const { updateNodeInternals } = useVueFlow();
 
 function addNode() {
   nodes.value.push({
@@ -656,6 +661,14 @@ function cleanUpContainers() {
       isSending.value = false;
     });
 }
+
+// Принудительно обновлять позиции ручек после изменений nodes/edges
+watch([nodes, edges], () => {
+  // Принудительно обновить все ноды (для корректного центрирования ручек)
+  setTimeout(() => {
+    nodes.value.forEach(n => updateNodeInternals(n.id));
+  }, 0);
+}, { deep: true });
 </script>
 
 <style src="@/assets/PipelineEditor.css" scoped></style>
